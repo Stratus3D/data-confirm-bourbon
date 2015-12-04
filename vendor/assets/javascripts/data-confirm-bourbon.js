@@ -43,13 +43,13 @@
     fade: true,
     verifyClass: 'form-control',
     elements: ['a[data-confirm]', 'button[data-confirm]', 'input[type=submit][data-confirm]'],
-    focus: 'commit',
+    focus: 'cancel',
     zIndex: 1050,
     modalClass: false,
     show: true
   };
 
-  var settings;
+  var settings = $.extend({}, defaults);
 
   var buildModal = function (options) {
     var id = 'confirm-modal-' + String(Math.random()).slice(2, -1);
@@ -59,13 +59,13 @@
     var modal = $('<div class="modal">' +
                   '<input class="modal-state" id="modal-' + id + '" type="checkbox" />' +
                   '<div class="modal-fade-screen">' +
-                  '<div class="modal-inner">' +
+                  '<div class="modal-inner ' + modalClass + '">' +
                   '<div class="modal-close" for="modal-' + id + '"></div>' +
                   '<h1 class="modal-title">Modal Title</h1>' +
                   '<div class="modal-content"></div>' +
                   '<div class="modal-footer">' +
-                  '<button class="btn cancel" data-dismiss="modal" aria-hidden="true"></button>' +
-                  '<button class="btn commit"></button>' +
+                  '<button class="cancel" data-dismiss="modal"></button>' +
+                  '<button class="commit"></button>' +
                   '</div>'+
                   '</div>' +
                   '</div>' +
@@ -74,18 +74,8 @@
 
     var modalState = modal.find('.modal-state');
 
-    modal.hide = function() {
-        console.log('hiding modal');
-        modalState.prop('checked', false);
-    };
-
-    modal.show = function() {
-        console.log('showing modal');
-        modalState.prop('checked', true);
-    };
-
     modal.isVisible = function() {
-        return modal.find('.modal-inner').is(':visible');
+        return modalState.is(':checked');
     };
 
     modal.find('.modal-title').text(options.title || settings.title);
@@ -141,72 +131,98 @@
       body.append(verification);
     }
 
-    var focus_element;
+    var focusElement;
     if (options.focus) {
-      focus_element = options.focus;
+      focusElement = options.focus;
     } else if (options.method === 'delete') {
-      focus_element = 'cancel';
+      focusElement = 'cancel';
     } else {
-      focus_element = settings.focus;
+      focusElement = settings.focus;
     }
-    focus_element = modal.find('.' + focus_element);
+    focusElement = modal.find('.' + focusElement);
 
-    modalState.on('change', function () {
-        if (this.checked) {
-            $("body").addClass("modal-open");
-            focus_element.focus();
-        } else {
-            $("body").removeClass("modal-open");
-            modal.trigger('hide');
-        }
-    });
+    modal.hide = function() {
+        modalState.prop('checked', false);
+        $("body").removeClass("modal-open");
+        modal.trigger('hide');
+        modal.remove();
+    };
+
+    modal.show = function() {
+        modalState.prop('checked', true);
+        $("body").addClass("modal-open");
+        focusElement.focus();
+    };
 
     $('body').append(modal);
+
+    modal.data('confirmed', false);
+
+    modal.find('.commit').on('click', function () {
+      modal.data('confirmed', true);
+      options.element.trigger('click');
+      modal.hide();
+      return false;
+    });
+
+    modal.find('.commit').on('click', function () {
+        if (options.onConfirm && options.onConfirm.call) {
+            options.onConfirm.call();
+        }
+
+        modal.hide();
+    });
+
+    modal.find('.cancel').on('click', function () {
+        if (options.onCancel && options.onCancel.call) {
+            options.onCancel.call();
+        }
+
+        modal.hide();
+    });
 
     return modal;
   };
 
-  window.dataConfirmBourbonModal = {
-    setDefaults: function (newSettings) {
-      settings = $.extend(settings, newSettings);
-    },
+  //window.dataConfirmBourbonModal = {
+  //  setDefaults: function (newSettings) {
+  //    settings = $.extend(settings, newSettings);
+  //  },
 
-    restoreDefaults: function () {
-      settings = $.extend({}, defaults);
-    },
+  //  restoreDefaults: function () {
+  //    settings = $.extend({}, defaults);
+  //  },
 
-    confirm: function (options) {
-      // Build an ephemeral modal
-      //
-      var modal = buildModal(options);
+  //  confirm: function (options) {
+  //    // Build an ephemeral modal
+  //    //
+  //    var modal = buildModal(options);
 
-      modal.show();
-      modal.on('hide', function () {
-        modal.remove();
-      });
+  //    modal.show();
 
-      modal.find('.commit').on('click', function () {
-        if (options.onConfirm && options.onConfirm.call) {
-          options.onConfirm.call();
-        }
+  //    modal.find('.commit').on('click', function () {
+  //      if (options.onConfirm && options.onConfirm.call) {
+  //        options.onConfirm.call();
+  //      }
 
-        modal.hide();
-      });
+  //      modal.hide();
+  //    });
 
-      modal.find('.cancel').on('click', function () {
-        if (options.onCancel && options.onCancel.call) {
-          options.onCancel.call();
-        }
+  //    modal.find('.cancel').on('click', function () {
+  //      if (options.onCancel && options.onCancel.call) {
+  //        options.onCancel.call();
+  //      }
 
-        modal.hide();
-      });
-    }
-  };
+  //      modal.hide();
+  //    });
+  //  }
+  //};
 
-  dataConfirmBourbonModal.restoreDefaults();
+  //dataConfirmBourbonModal.restoreDefaults();
 
   var buildElementModal = function (element) {
     var options = {
+      element:      element,
       title:        element.attr('title') || element.data('original-title'),
       text:         element.data('confirm'),
       focus:        element.data('focus'),
@@ -227,14 +243,6 @@
 
     var modal = buildModal(options);
 
-    modal.data('confirmed', false);
-    modal.find('.commit').on('click', function () {
-      modal.data('confirmed', true);
-      element.trigger('click');
-      //modal.hide();
-      return false;
-    });
-
     return modal;
   };
 
@@ -253,12 +261,6 @@
     return modal;
   };
 
-  //$.fn.confirmModal = function () {
-  //  getModal($(this)).show();
-
-  //  return this;
-  //};
-
   if ($.rails) {
     /**
      * Attaches to the Rails' UJS adapter 'confirm' event on links having a
@@ -270,13 +272,12 @@
      * the 'confirm' button in it.
      */
     $(document).delegate(settings.elements.join(', '), 'confirm', function() {
-      console.log('hey open the modal');
-
       var element = $(this),
           modal = getModal(element),
           confirmed = modal.data('confirmed');
 
       if (!confirmed && !modal.isVisible()) {
+
         modal.show();
 
         var confirm = $.rails.confirm;
