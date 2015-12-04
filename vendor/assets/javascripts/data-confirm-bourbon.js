@@ -51,6 +51,121 @@
 
   var settings;
 
+  var buildModal = function (options) {
+    var id = 'confirm-modal-' + String(Math.random()).slice(2, -1);
+    var fade = settings.fade ? 'fade' : '';
+    var modalClass = settings.modalClass ? settings.modalClass : '';
+
+    var modal = $('<div class="modal">' +
+                  '<input class="modal-state" id="modal-' + id + '" type="checkbox" />' +
+                  '<div class="modal-fade-screen">' +
+                  '<div class="modal-inner">' +
+                  '<div class="modal-close" for="modal-' + id + '"></div>' +
+                  '<h1 class="modal-title">Modal Title</h1>' +
+                  '<div class="modal-content"></div>' +
+                  '<div class="modal-footer">' +
+                  '<button class="btn cancel" data-dismiss="modal" aria-hidden="true"></button>' +
+                  '<button class="btn commit"></button>' +
+                  '</div>'+
+                  '</div>' +
+                  '</div>' +
+                  '</div>'
+                  );
+
+    var modalState = modal.find('.modal-state');
+
+    modal.hide = function() {
+        console.log('hiding modal');
+        modalState.prop('checked', false);
+    };
+
+    modal.show = function() {
+        console.log('showing modal');
+        modalState.prop('checked', true);
+    };
+
+    modal.isVisible = function() {
+        return modal.find('.modal-inner').is(':visible');
+    };
+
+    modal.find('.modal-title').text(options.title || settings.title);
+
+    var body = modal.find('.modal-content');
+
+    $.each((options.text||'').split(/\n{2}/), function (i, piece) {
+      body.append($('<p/>').html(piece));
+    });
+
+    var commit = modal.find('.commit');
+    commit.text(options.commit || settings.commit);
+    commit.addClass(options.commitClass || settings.commitClass);
+
+    var cancel = modal.find('.cancel');
+    cancel.text(options.cancel || settings.cancel);
+    cancel.addClass(options.cancelClass || settings.cancelClass);
+
+    //if (options.remote) {
+    //  commit.attr('data-dismiss', 'modal');
+    //}
+
+    if (options.verify || options.verifyRegexp) {
+      commit.prop('disabled', true);
+
+      var isMatch;
+      if (options.verifyRegexp) {
+        var caseInsensitive = options.verifyRegexpCaseInsensitive;
+        var regexp = options.verifyRegexp;
+        var re = new RegExp(regexp, caseInsensitive ? 'i' : '');
+
+        isMatch = function (input) { return input.match(re); };
+      } else {
+        isMatch = function (input) { return options.verify === input; };
+      }
+
+      var verification = $('<input/>', {"type": 'text', "class": settings.verifyClass}).on('keyup', function () {
+        commit.prop('disabled', !isMatch($(this).val()));
+      });
+
+      modalState.on('change', function () {
+          if (this.checked) {
+              verification.focus();
+          } else {
+              verification.val('').trigger('keyup');
+          }
+      });
+
+      if (options.verifyLabel) {
+        body.append($('<p>', {text: options.verifyLabel}));
+      }
+
+      body.append(verification);
+    }
+
+    var focus_element;
+    if (options.focus) {
+      focus_element = options.focus;
+    } else if (options.method === 'delete') {
+      focus_element = 'cancel';
+    } else {
+      focus_element = settings.focus;
+    }
+    focus_element = modal.find('.' + focus_element);
+
+    modalState.on('change', function () {
+        if (this.checked) {
+            $("body").addClass("modal-open");
+            focus_element.focus();
+        } else {
+            $("body").removeClass("modal-open");
+            modal.trigger('hide');
+        }
+    });
+
+    $('body').append(modal);
+
+    return modal;
+  };
+
   window.dataConfirmBourbonModal = {
     setDefaults: function (newSettings) {
       settings = $.extend(settings, newSettings);
@@ -65,23 +180,25 @@
       //
       var modal = buildModal(options);
 
-      modal.spawn();
-      modal.on('hidden.bs.modal', function () {
+      modal.show();
+      modal.on('hide', function () {
         modal.remove();
       });
 
       modal.find('.commit').on('click', function () {
-        if (options.onConfirm && options.onConfirm.call)
+        if (options.onConfirm && options.onConfirm.call) {
           options.onConfirm.call();
+        }
 
-        modal.modal('hide');
+        modal.hide();
       });
 
       modal.find('.cancel').on('click', function () {
-        if (options.onCancel && options.onCancel.call)
+        if (options.onCancel && options.onCancel.call) {
           options.onCancel.call();
+        }
 
-        modal.modal('hide');
+        modal.hide();
       });
     }
   };
@@ -114,136 +231,9 @@
     modal.find('.commit').on('click', function () {
       modal.data('confirmed', true);
       element.trigger('click');
-      modal.modal('hide');
+      //modal.hide();
+      return false;
     });
-
-    return modal;
-  }
-
-  var buildModal = function (options) {
-    var id = 'confirm-modal-' + String(Math.random()).slice(2, -1);
-    var fade = settings.fade ? 'fade' : '';
-    var modalClass = settings.modalClass ? settings.modalClass : '';
-
-    var modal = $('<div class="modal">' + 
-                  '<label for="modal-' + id + '">' + 
-                  '<div class="modal-trigger">Click for Modal</div>' + 
-                  '</label>' +
-                  '<input class="modal-state" id="modal-' + id + '" type="checkbox" checked/>' +
-                  '<div class="modal-fade-screen">' + 
-                  '<div class="modal-inner">' +
-                  '<div class="modal-close" for="modal-' + id + '"></div>' +
-                  '<h1>Modal Title</h1>' +
-                  '<p class="modal-intro">Intro text lorem ipsum dolor sit ametm, quas, eaque facilis aliquid cupiditate tempora cumque ipsum accusantium illo modi commodi  minima.</p>' + 
-                  '<p class="modal-content">Body text lorem ipsum dolor ipsum dolor sit sit possimus amet, consectetur adipisicing elit. Itaque, placeat, explicabo, veniam quos aperiam molestias eriam molestias molestiae suscipit ipsum enim quasi sit possimus quod atque nobis voluptas earum odit accusamus quibusdam. Body text lorem ipsum dolor ipsum dolor sit sit possimus amet.</p>' +
-                  '<div class="modal-footer">' +
-                  '<button class="btn cancel" data-dismiss="modal" aria-hidden="true"></button>' +
-                  '<button class="btn commit"></button>' +
-                  '</div>'+
-                  '</div>' +
-                  '</div>' +
-                  '</div>'
-                  );
-
-    /*var modal = $(
-      '<div id="'+id+'" class="modal '+fade+' '+modalClass+'" tabindex="-1" role="dialog" aria-labelledby="'+id+'Label" aria-hidden="true">' +
-        '<div class="modal-dialog">' +
-          '<div class="modal-content">' +
-            '<div class="modal-header">' +
-              '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
-              '<h4 id="'+id+'Label" class="modal-title"></h4> ' +
-            '</div>' +
-            '<div class="modal-body"></div>' +
-          '</div>'+
-        '</div>'+
-      '</div>'
-    );*/
-
-    // Make sure it's always the top zindex
-    var highest = current = settings.zIndex;
-    $('.modal.in').not('#'+id).each(function() {
-      current = parseInt($(this).css('z-index'), 10);
-      if(current > highest) {
-        highest = current
-      }
-    });
-    modal.css('z-index', parseInt(highest) + 1);
-
-    modal.find('.modal-title').text(options.title || settings.title);
-
-    var body = modal.find('.modal-body');
-
-    $.each((options.text||'').split(/\n{2}/), function (i, piece) {
-      body.append($('<p/>').html(piece));
-    });
-
-    var commit = modal.find('.commit');
-    commit.text(options.commit || settings.commit);
-    commit.addClass(options.commitClass || settings.commitClass);
-
-    var cancel = modal.find('.cancel');
-    cancel.text(options.cancel || settings.cancel);
-    cancel.addClass(options.cancelClass || settings.cancelClass);
-
-    if (options.remote) {
-      commit.attr('data-dismiss', 'modal');
-    }
-
-    if (options.verify || options.verifyRegexp) {
-      commit.prop('disabled', true);
-
-      var isMatch;
-      if (options.verifyRegexp) {
-        var caseInsensitive = options.verifyRegexpCaseInsensitive;
-        var regexp = options.verifyRegexp;
-        var re = new RegExp(regexp, caseInsensitive ? 'i' : '');
-
-        isMatch = function (input) { return input.match(re) };
-      } else {
-        isMatch = function (input) { return options.verify == input };
-      }
-
-      var verification = $('<input/>', {"type": 'text', "class": settings.verifyClass}).on('keyup', function () {
-        commit.prop('disabled', !isMatch($(this).val()));
-      });
-
-      modal.on('shown.bs.modal', function () {
-        verification.focus();
-      });
-
-      modal.on('hidden.bs.modal', function () {
-        verification.val('').trigger('keyup');
-      });
-
-      if (options.verifyLabel)
-        body.append($('<p>', {text: options.verifyLabel}))
-
-      body.append(verification);
-    }
-
-    var focus_element;
-    if (options.focus) {
-      focus_element = options.focus;
-    } else if (options.method == 'delete') {
-      focus_element = 'cancel'
-    } else {
-      focus_element = settings.focus;
-    }
-    focus_element = modal.find('.' + focus_element);
-
-    modal.on('shown.bs.modal', function () {
-      focus_element.focus();
-    });
-
-    $('body').append(modal);
-
-    modal.spawn = function() {
-      return modal.modal({
-        backdrop: options.backdrop,
-        keyboard: options.keyboard,
-        show:     options.show
-      });
-    };
 
     return modal;
   };
@@ -256,17 +246,18 @@
   var getModal = function (element) {
     var modal = element.data('confirm-modal') || buildElementModal(element);
 
-    if (modal && !element.data('confirm-modal'))
+    if (modal && !element.data('confirm-modal')) {
       element.data('confirm-modal', modal);
+    }
 
     return modal;
   };
 
-  $.fn.confirmModal = function () {
-    getModal($(this)).spawn();
+  //$.fn.confirmModal = function () {
+  //  getModal($(this)).show();
 
-    return this;
-  };
+  //  return this;
+  //};
 
   if ($.rails) {
     /**
@@ -279,14 +270,17 @@
      * the 'confirm' button in it.
      */
     $(document).delegate(settings.elements.join(', '), 'confirm', function() {
-      var element = $(this), modal = getModal(element);
-      var confirmed = modal.data('confirmed');
+      console.log('hey open the modal');
 
-      if (!confirmed && !modal.is(':visible')) {
-        modal.spawn();
+      var element = $(this),
+          modal = getModal(element),
+          confirmed = modal.data('confirmed');
+
+      if (!confirmed && !modal.isVisible()) {
+        modal.show();
 
         var confirm = $.rails.confirm;
-        $.rails.confirm = function () { return modal.data('confirmed'); }
+        $.rails.confirm = function () { return modal.data('confirmed'); };
         modal.on('hide', function () { $.rails.confirm = confirm; });
       }
 
