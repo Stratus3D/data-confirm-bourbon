@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Trevor Brown"]
   s.email       = ["admin@stratus3d.com"]
   s.homepage    = "http://github.com/Stratus3D/data-confirm-bourbon"
+  s.license     = "MIT"
   s.summary     = "Use Bourbon Refill modals with Rails' UJS data-confirm"
   s.description = "This gem overrides Rails' UJS behaviour to open up a Bourbon Refill modal component instead of the browser's built in confirm() dialog"
 
