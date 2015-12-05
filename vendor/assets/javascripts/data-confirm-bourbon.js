@@ -59,7 +59,7 @@
 
     var modal = $('<div class="modal">' +
                   '<input class="modal-state" id="' + id + '" type="checkbox" />' +
-                  '<div class="modal-fade-screen">' +
+                  '<div class="modal-window">' +
                   '<div class="modal-inner ' + modalClass + '">' +
                   '<label class="modal-close" for="' + id + '"></label>' +
                   '<h1 class="modal-title">Modal Title</h1>' +
@@ -148,16 +148,14 @@
     modal.data('confirmed', false);
 
     modal.hide = function() {
-        //$(modalState).prop('checked', false);
         if (modalState.prop('checked')) {
-            modalState.click();
+            modalState.trigger('click');
         }
     };
 
     modal.show = function() {
-        //modalState.prop('checked', true);
         if (!modalState.prop('checked')) {
-            modalState.click();
+            modalState.trigger('click');
         }
     };
 
@@ -181,21 +179,14 @@
     });
 
     modal.find('.commit').on('click', function () {
-        console.log('clicked the confirm button');
-
-        //modal.data('confirmed', true);
-        //console.log(element);
-        //console.log(modal.data('confirmed'));
-        //element.trigger('click');
-
         if (options.onConfirm && options.onConfirm.call) {
             options.onConfirm.call();
         }
+
+        //modal.hide();
     });
 
     modal.find('.cancel').on('click', function () {
-        console.log('clicked the cancel button');
-
         if (options.onCancel && options.onCancel.call) {
             options.onCancel.call();
         }
@@ -265,12 +256,12 @@
 
     var modal = buildModal(options);
 
-    modal.data('confirmed', false);                                             
-    modal.find('.commit').on('click', function () {                             
-        modal.data('confirmed', true);                                            
-        element.trigger('click');                                                 
-        modal.hide();                                                      
-    });              
+    modal.data('confirmed', false);
+    modal.find('.commit').on('click', function () {
+        modal.data('confirmed', true);
+        element.trigger('click');
+        modal.hide();
+    });
 
     return modal;
   };
@@ -279,7 +270,6 @@
     var modalId = element.data('confirm-modal-id');
     if (modalId) {
         var modal = $($('#'+modalId).parent()[0]);
-        console.log(modal);
         return modal;
     }
 
@@ -311,8 +301,13 @@
           modal = getModal(element),
           confirmed = modal.data('confirmed');
 
-      console.log(modal);
-      if (!confirmed) { //&& !modal.isVisible()) {
+      var modalState = modal.find('.modal-state');
+
+      modal.isVisible = function() {
+          return modalState.is(':checked');
+      };
+
+      if (!confirmed && !modal.isVisible()) {
         modal.on('shown', function () { console.log('modal shown'); });
 
         modal.show();
@@ -321,6 +316,7 @@
         $.rails.confirm = function () { return modal.data('confirmed'); };
         modal.on('hidden', function () { console.log('modal hidden'); $.rails.confirm = confirm; });
       }
+
       return confirmed;
     });
   }
