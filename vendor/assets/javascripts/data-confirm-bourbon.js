@@ -309,13 +309,11 @@
           confirmed = modal.data('confirmed');
 
       if (!confirmed && !modal.isVisible()) {
-        modal.on('shown', function () { console.log('modal shown'); });
-
         modal.show();
 
         var confirm = $.rails.confirm;
         $.rails.confirm = function () { return modal.data('confirmed'); };
-        modal.on('hidden', function () { console.log('modal hidden'); $.rails.confirm = confirm; });
+        modal.on('hidden', function () { $.rails.confirm = confirm; });
       }
 
       return confirmed;
