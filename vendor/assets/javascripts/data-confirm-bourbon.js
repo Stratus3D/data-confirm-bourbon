@@ -53,14 +53,15 @@
 
   var buildModal = function (options) {
     var id = 'confirm-modal-' + String(Math.random()).slice(2, -1);
-    var fade = settings.fade ? 'fade' : '';
-    var modalClass = settings.modalClass ? settings.modalClass : '';
+    //var fade = settings.fade ? 'fade' : '';
+    var modalClass = settings.modalClass || '';
+    var element = options.element;
 
     var modal = $('<div class="modal">' +
                   '<input class="modal-state" id="modal-' + id + '" type="checkbox" />' +
                   '<div class="modal-fade-screen">' +
                   '<div class="modal-inner ' + modalClass + '">' +
-                  '<div class="modal-close" for="modal-' + id + '"></div>' +
+                  '<label class="modal-close" for="modal-' + id + '"></label>' +
                   '<h1 class="modal-title">Modal Title</h1>' +
                   '<div class="modal-content"></div>' +
                   '<div class="modal-footer">' +
@@ -71,6 +72,8 @@
                   '</div>' +
                   '</div>'
                   );
+
+    $('body').append(modal);
 
     var modalState = modal.find('.modal-state');
 
@@ -141,31 +144,50 @@
     }
     focusElement = modal.find('.' + focusElement);
 
+    modal.data('confirmed', false);
+
     modal.hide = function() {
-        modalState.prop('checked', false);
-        $("body").removeClass("modal-open");
-        modal.trigger('hide');
-        modal.remove();
+        //$(modalState).prop('checked', false);
+        if (modalState.prop('checked')) {
+            modalState.click();
+        }
     };
 
     modal.show = function() {
-        modalState.prop('checked', true);
-        $("body").addClass("modal-open");
-        focusElement.focus();
+        //modalState.prop('checked', true);
+        if (!modalState.prop('checked')) {
+            modalState.click();
+        }
     };
 
-    $('body').append(modal);
+    var stateChangeHandler = function () {
+        if (modalState.is(':checked')) {
+            $("body").addClass("modal-open");
+            modal.trigger('shown');
+            focusElement.focus();
+        } else {
+            $("body").removeClass("modal-open");
+            modal.trigger('hidden');
+            modal.remove();
+        }
+    };
 
-    modal.data('confirmed', false);
+    modalState.on('click', function () {
+        stateChangeHandler();
+    });
 
-    modal.find('.commit').on('click', function () {
-      modal.data('confirmed', true);
-      options.element.trigger('click');
-      modal.hide();
-      return false;
+    modalState.on('change', function () {
+        stateChangeHandler();
     });
 
     modal.find('.commit').on('click', function () {
+        console.log('clicked the confirm button');
+
+        modal.data('confirmed', true);
+        console.log(element);
+        console.log(modal.data('confirmed'));
+        element.trigger('click');
+
         if (options.onConfirm && options.onConfirm.call) {
             options.onConfirm.call();
         }
@@ -174,6 +196,8 @@
     });
 
     modal.find('.cancel').on('click', function () {
+        console.log('clicked the cancel button');
+
         if (options.onCancel && options.onCancel.call) {
             options.onCancel.call();
         }
@@ -273,7 +297,7 @@
      */
     $(document).delegate(settings.elements.join(', '), 'confirm', function() {
       var element = $(this),
-          modal = getModal(element),
+          modal = buildElementModal(element),
           confirmed = modal.data('confirmed');
 
       if (!confirmed && !modal.isVisible()) {
@@ -282,7 +306,8 @@
 
         var confirm = $.rails.confirm;
         $.rails.confirm = function () { return modal.data('confirmed'); };
-        modal.on('hide', function () { $.rails.confirm = confirm; });
+        modal.on('hidden', function () { console.log('modal hidden'); $.rails.confirm = confirm; });
+        modal.on('shown', function () { console.log('modal shown'); });
       }
 
       return confirmed;
