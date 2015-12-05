@@ -182,8 +182,6 @@
         if (options.onConfirm && options.onConfirm.call) {
             options.onConfirm.call();
         }
-
-        //modal.hide();
     });
 
     modal.find('.cancel').on('click', function () {
@@ -236,8 +234,8 @@
   var buildElementModal = function (element) {
     var options = {
       element:      element,
-      title:        element.attr('title') || element.data('original-title'),
-      text:         element.data('confirm'),
+      title:        element.data('confirm'),
+      text:         element.data('text'),
       focus:        element.data('focus'),
       method:       element.data('method'),
       commit:       element.data('commit'),
