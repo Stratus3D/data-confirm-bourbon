@@ -1,6 +1,6 @@
 # Data-Confirm Modal
 
-Uses [Bourbon Refill's modals](http://twitter.github.io/bootstrap/javascript.html#modals)
+Uses [Bourbon Refill's modals](http://refills.bourbon.io/components/#modal)
 in place of the browser's builtin `confirm()` API for links generated through Rails'
 helpers with the `:confirm` option.
 
@@ -28,7 +28,16 @@ Then include it in `application.scss`:
 
     @import "refills/_modal";
 
-And then require the Javascript from your `application.js`:
+Your `application.scss` file should look something like this we you are finished:
+
+    @import "base/base";
+    @import 'base/grid-settings';
+    @import "neat";
+    @import "refills/_modal";
+
+If you have trouble getting all the imports correct refer to [this refills issue](https://github.com/thoughtbot/refills/issues/113).
+
+And then require the JavaScript from your `application.js`:
 
     //= require data-confirm-bourbon
 
@@ -59,15 +68,15 @@ asked to type the verification value before being allowed to proceed.
 
     <%= link_to 'Delete', data: {confirm: 'Are you sure?', verify: 'Foo', verify_text: 'Type "Foo" to confirm'} %>
 
-You can set global setting using `dataConfirmModal.setDefaults`, for example:
+You can set global setting using `dataConfirmBourbonModal.setDefaults`, for example:
 
-    dataConfirmModal.setDefaults({
+    dataConfirmBourbonModal.setDefaults({
       title: 'Confirm your action',
       commit: 'Continue',
       cancel: 'Cancel'
     });
 
-To restore default settings use `dataConfirmModal.restoreDefaults()`.
+To restore default settings use `dataConfirmBourbonModal.restoreDefaults()`.
 
 [data-confirm-behaviour]: http://api.rubyonrails.org/classes/ActionView/Helpers/UrlHelper.html
 
@@ -86,11 +95,11 @@ link will receive a `click` event.
 
 ### Without Rails, without data attributes
 
-Use `dataConfirmModal.confirm()` passing any of the supported options, and pass
+Use `dataConfirmBourbonModal.confirm()` passing any of the supported options, and pass
 an `onConfirm` and `onCancel` callbacks that'll be invoked when the user clicks
 the confirm or the cancel buttons.
 
-    dataConfirmModal.confirm({
+    dataConfirmBourbonModal.confirm({
       title: 'Are you sure?',
       text: 'Really do this?',
       commit: 'Yes do it',
@@ -100,11 +109,9 @@ the confirm or the cancel buttons.
       onCancel:  function() { alert('cancelled') }
     });
 
-A live jsfiddle example is [available here](http://jsfiddle.net/t0m7ayr3/).
-
 ### Modal Options
 
-The default [bootstrap modal options](http://getbootstrap.com/javascript/#modals-options)
+The options [bootstrap modal options](http://getbootstrap.com/javascript/#modals-options)
 can be passed either via JavaScript or through data attributes.
 
      $('#foo').confirmModal({backdrop: 'static', keyboard: false});
@@ -112,6 +119,11 @@ can be passed either via JavaScript or through data attributes.
 or
 
      <a href="#" data-confirm="Really?" data-backdrop="static" data-keyboard="false">
+
+## Issues
+
+* Can't be used without rails.
+* Can't be called directly from JavaScript.
 
 ## Authors
 
@@ -123,7 +135,7 @@ or
 ## Background
 
 Spinned off a corporate [IFAD](http://github.com/ifad/) application in which
-an user did too much damage because the confirm wasn't *THAT* explicit ... ;-).
+an user did too much damage because the confirm wasn't *THAT* explicit ... ;-). [Initially built for bootstrap](https://github.com/ifad/data-confirm-modal) and then later converted to work with Bourbon Refills.
 
 ## Contributing
 
