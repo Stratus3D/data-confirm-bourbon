@@ -78,10 +78,6 @@
 
     var modalState = modal.find('.modal-state');
 
-    modal.isVisible = function() {
-        return modalState.is(':checked');
-    };
-
     modal.find('.modal-title').text(options.title || settings.title);
 
     var body = modal.find('.modal-content');
@@ -147,18 +143,6 @@
 
     modal.data('confirmed', false);
 
-    modal.hide = function() {
-        if (modalState.prop('checked')) {
-            modalState.trigger('click');
-        }
-    };
-
-    modal.show = function() {
-        if (!modalState.prop('checked')) {
-            modalState.trigger('click');
-        }
-    };
-
     var stateChangeHandler = function () {
         if (modalState.is(':checked')) {
             $("body").addClass("modal-open");
@@ -195,41 +179,41 @@
     return modal;
   };
 
-  //window.dataConfirmBourbonModal = {
-  //  setDefaults: function (newSettings) {
-  //    settings = $.extend(settings, newSettings);
-  //  },
+  window.dataConfirmBourbonModal = {
+    setDefaults: function (newSettings) {
+      settings = $.extend(settings, newSettings);
+    },
 
-  //  restoreDefaults: function () {
-  //    settings = $.extend({}, defaults);
-  //  },
+    restoreDefaults: function () {
+      settings = $.extend({}, defaults);
+    },
 
-  //  confirm: function (options) {
-  //    // Build an ephemeral modal
-  //    //
-  //    var modal = buildModal(options);
+    confirm: function (options) {
+      // Build an ephemeral modal
+      //
+      var modal = buildModal(options);
 
-  //    modal.show();
+      modal.show();
 
-  //    modal.find('.commit').on('click', function () {
-  //      if (options.onConfirm && options.onConfirm.call) {
-  //        options.onConfirm.call();
-  //      }
+      modal.find('.commit').on('click', function () {
+        if (options.onConfirm && options.onConfirm.call) {
+          options.onConfirm.call();
+        }
 
-  //      modal.hide();
-  //    });
+        modal.hide();
+      });
 
-  //    modal.find('.cancel').on('click', function () {
-  //      if (options.onCancel && options.onCancel.call) {
-  //        options.onCancel.call();
-  //      }
+      modal.find('.cancel').on('click', function () {
+        if (options.onCancel && options.onCancel.call) {
+          options.onCancel.call();
+        }
 
-  //      modal.hide();
-  //    });
-  //  }
-  //};
+        modal.hide();
+      });
+    }
+  };
 
-  //dataConfirmBourbonModal.restoreDefaults();
+  window.dataConfirmBourbonModal.restoreDefaults();
 
   var buildElementModal = function (element) {
     var options = {
@@ -264,6 +248,28 @@
     return modal;
   };
 
+  var decorateModal = function (modal) {
+    var modalState = modal.find('.modal-state');
+
+    modal.isVisible = function() {
+        return modalState.is(':checked');
+    };
+
+    modal.hide = function() {
+        if (modalState.prop('checked')) {
+            modalState.trigger('click');
+        }
+    };
+
+    modal.show = function() {
+        if (!modalState.prop('checked')) {
+            modalState.trigger('click');
+        }
+    };
+
+    return modal;
+  };
+
   var getExistingModal = function (element) {
     var modalId = element.data('confirm-modal-id');
     if (modalId) {
@@ -281,7 +287,10 @@
   var getModal = function (element) {
     var modal = getExistingModal(element) || buildElementModal(element);
 
-    return modal;
+    // Decorate the modal with the functions we need
+    var decoratedModal = decorateModal(modal);
+
+    return decoratedModal;
   };
 
   if ($.rails) {
@@ -298,12 +307,6 @@
       var element = $(this),
           modal = getModal(element),
           confirmed = modal.data('confirmed');
-
-      var modalState = modal.find('.modal-state');
-
-      modal.isVisible = function() {
-          return modalState.is(':checked');
-      };
 
       if (!confirmed && !modal.isVisible()) {
         modal.on('shown', function () { console.log('modal shown'); });
