@@ -58,10 +58,10 @@
     var element = options.element;
 
     var modal = $('<div class="modal">' +
-                  '<input class="modal-state" id="modal-' + id + '" type="checkbox" />' +
+                  '<input class="modal-state" id="' + id + '" type="checkbox" />' +
                   '<div class="modal-fade-screen">' +
                   '<div class="modal-inner ' + modalClass + '">' +
-                  '<label class="modal-close" for="modal-' + id + '"></label>' +
+                  '<label class="modal-close" for="' + id + '"></label>' +
                   '<h1 class="modal-title">Modal Title</h1>' +
                   '<div class="modal-content"></div>' +
                   '<div class="modal-footer">' +
@@ -74,6 +74,7 @@
                   );
 
     $('body').append(modal);
+    element.data('confirm-modal-id', id);
 
     var modalState = modal.find('.modal-state');
 
@@ -168,7 +169,6 @@
         } else {
             $("body").removeClass("modal-open");
             modal.trigger('hidden');
-            modal.remove();
         }
     };
 
@@ -183,16 +183,14 @@
     modal.find('.commit').on('click', function () {
         console.log('clicked the confirm button');
 
-        modal.data('confirmed', true);
-        console.log(element);
-        console.log(modal.data('confirmed'));
-        element.trigger('click');
+        //modal.data('confirmed', true);
+        //console.log(element);
+        //console.log(modal.data('confirmed'));
+        //element.trigger('click');
 
         if (options.onConfirm && options.onConfirm.call) {
             options.onConfirm.call();
         }
-
-        modal.hide();
     });
 
     modal.find('.cancel').on('click', function () {
@@ -267,20 +265,33 @@
 
     var modal = buildModal(options);
 
+    modal.data('confirmed', false);                                             
+    modal.find('.commit').on('click', function () {                             
+        modal.data('confirmed', true);                                            
+        element.trigger('click');                                                 
+        modal.hide();                                                      
+    });              
+
     return modal;
   };
 
+  var getExistingModal = function (element) {
+    var modalId = element.data('confirm-modal-id');
+    if (modalId) {
+        var modal = $($('#'+modalId).parent()[0]);
+        console.log(modal);
+        return modal;
+    }
+
+    return;
+  };
 
   /**
    * Returns a modal already built for the given element or builds a new one,
    * caching it into the element's `confirm-modal` data attribute.
    */
   var getModal = function (element) {
-    var modal = element.data('confirm-modal') || buildElementModal(element);
-
-    if (modal && !element.data('confirm-modal')) {
-      element.data('confirm-modal', modal);
-    }
+    var modal = getExistingModal(element) || buildElementModal(element);
 
     return modal;
   };
@@ -297,19 +308,19 @@
      */
     $(document).delegate(settings.elements.join(', '), 'confirm', function() {
       var element = $(this),
-          modal = buildElementModal(element),
+          modal = getModal(element),
           confirmed = modal.data('confirmed');
 
-      if (!confirmed && !modal.isVisible()) {
+      console.log(modal);
+      if (!confirmed) { //&& !modal.isVisible()) {
+        modal.on('shown', function () { console.log('modal shown'); });
 
         modal.show();
 
         var confirm = $.rails.confirm;
         $.rails.confirm = function () { return modal.data('confirmed'); };
         modal.on('hidden', function () { console.log('modal hidden'); $.rails.confirm = confirm; });
-        modal.on('shown', function () { console.log('modal shown'); });
       }
-
       return confirmed;
     });
   }
