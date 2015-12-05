@@ -14,7 +14,7 @@ certain value, for extra willingness confirmation (inspired by GitHub's
 
 Add this line to your application's Gemfile:
 
-    gem 'data-confirm-bourbon', github: 'Stratus3D/data-confirm-bourbon'
+    gem 'data-confirm-bourbon'
 
 Then execute:
 
